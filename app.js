@@ -1,19 +1,23 @@
 import { BreezeConnect } from "breezeconnect";
 
-const API_KEY = "L5BO67301s6611964252V97+8_&98Kp3";
-const SECRET_KEY = "x01A3twC7Z^0m57963PJ91341236933!";
-let SESSION_TOKEN = ""; // ➤ बाद में यहाँ डालें
+// ✅ Updated credentials
+const API_KEY = "514768_09W5a542p971c5865S359n76&";
+const SECRET_KEY = "9+6F15M3p835T6c27V85n3Z91534Y190";
+let SESSION_TOKEN = "52308481";
 
+// ✅ Breeze init
 const breeze = new BreezeConnect({ appKey: API_KEY });
 
 async function init() {
-  if (!SESSION_TOKEN) {
-    showPopup("⚠️ Session Token missing. Add it and refresh.");
-    return;
+  try {
+    await breeze.generateSession(SECRET_KEY, SESSION_TOKEN);
+    console.log("✅ Session initialized");
+    scheduleMarketCheck();
+    scheduleScan();
+  } catch (e) {
+    console.error("❌ Session failed", e);
+    showPopup("⚠️ Breeze session error");
   }
-  await breeze.generateSession(SECRET_KEY, SESSION_TOKEN);
-  scheduleMarketCheck();
-  scheduleScan();
 }
 
 function scheduleMarketCheck() {
@@ -21,29 +25,18 @@ function scheduleMarketCheck() {
   if (now.getHours() === 9 && now.getMinutes() === 15) alertAndLog("Market has opened");
   if (now.getHours() === 15 && now.getMinutes() === 30) alertAndLog("Market has closed");
 
-  const msNext = getMSUntilNextMinute();
+  const msNext = (60 - now.getSeconds()) * 1000;
   setTimeout(scheduleMarketCheck, msNext);
 }
 
 function scheduleScan() {
   runScan();
-  const msNext15 = getMSUntilNext15min();
-  setTimeout(scheduleScan, msNext15);
-}
-
-function getMSUntilNextMinute() {
-  const now = new Date();
-  return (60 - now.getSeconds()) * 1000;
-}
-
-function getMSUntilNext15min() {
   const now = new Date();
   const min = now.getMinutes();
   const next = Math.ceil(min / 15) * 15;
   const target = new Date(now);
-  target.setMinutes(next);
-  target.setSeconds(5);
-  return target - now;
+  target.setMinutes(next, 5, 0);
+  setTimeout(scheduleScan, target - now);
 }
 
 async function runScan() {
@@ -55,8 +48,7 @@ async function runScan() {
     });
     analyzeOptions(data);
   } catch (err) {
-    console.error(err);
-    alertAndLog("⚠️ Scan failed: " + err.message);
+    alertAndLog("⚠️ API Error: " + err.message);
   }
 }
 
@@ -66,19 +58,19 @@ function analyzeOptions(chain) {
     o.oiChg = o.changeInOI;
     o.score = o.iv * 0.6 + o.oiChg * 0.4;
   });
+
   const calls = chain.filter(o => o.right === "call");
   const puts = chain.filter(o => o.right === "put");
 
   const bestCall = maxBy(calls, "score");
   const bestPut = maxBy(puts, "score");
-  const best = (bestPut.score > bestCall.score) ? { ...bestPut, type: "PUT" } : { ...bestCall, type: "CALL" };
+  const best = bestPut.score > bestCall.score ? { ...bestPut, type: "PUT" } : { ...bestCall, type: "CALL" };
 
-  const msg = `Best Option 🔥: ${best.type} @ ${best.strike_price} | IV: ${best.iv.toFixed(2)} | ΔOI: ${best.oiChg.toFixed(0)}`;
-  alertAndLog(msg);
+  alertAndLog(`🔥 ${best.type} ${best.strike_price} | IV: ${best.iv.toFixed(2)} | ΔOI: ${best.oiChg}`);
 }
 
 function maxBy(arr, key) {
-  return arr.reduce((acc, cur) => (!acc || cur[key] > acc[key]) ? cur : acc, null);
+  return arr.reduce((max, o) => (!max || o[key] > max[key]) ? o : max, null);
 }
 
 function showPopup(text) {
