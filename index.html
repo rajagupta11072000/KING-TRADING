@@ -1,17 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Trading King</title>
+  <meta charset="UTF-8" /><meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Trading King AI Pro</title>
   <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
 </head>
 <body>
   <div id="popup" class="hidden"></div>
   <div id="log-container">
     <h2>📋 Daily Alerts Log</h2>
     <ul id="alert-log"></ul>
+    <button id="export-csv">Export CSV</button>
   </div>
+  <canvas id="heatmap" width="600" height="300"></canvas>
   <script type="module" src="app.js"></script>
 </body>
 </html>
